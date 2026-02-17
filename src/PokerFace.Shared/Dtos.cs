@@ -78,6 +78,11 @@ public class StartSessionRequest
     public string? Topic { get; set; }
 }
 
+public class UpdateParticipantRequest
+{
+    public string DisplayName { get; set; } = string.Empty;
+}
+
 public class VoteRequest
 {
     public string Value { get; set; } = string.Empty;

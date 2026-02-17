@@ -58,6 +58,26 @@ public class TablesController : ControllerBase
         }
     }
 
+    [HttpPut("{tableId}/participants/me")]
+    public async Task<IActionResult> UpdateParticipant(Guid tableId, [FromBody] UpdateParticipantRequest request, [FromHeader(Name = "X-Participant-Token")] string token)
+    {
+        if (!_tableService.ValidateParticipant(tableId, token, out var participant)) return Unauthorized();
+
+        try
+        {
+            _tableService.UpdateParticipant(tableId, participant.Id, request.DisplayName);
+            
+            // Notify group about name change
+            await _hubContext.Clients.Group(tableId.ToString()).SendAsync("UserUpdated", participant.Id, request.DisplayName);
+            
+            return Ok();
+        }
+        catch (System.Collections.Generic.KeyNotFoundException)
+        {
+            return NotFound("Table not found");
+        }
+    }
+
     [HttpPost("{tableId}/sessions")]
     public async Task<ActionResult<SessionDto>> StartSession(Guid tableId, [FromBody] StartSessionRequest request, [FromHeader(Name = "X-Participant-Token")] string token)
     {

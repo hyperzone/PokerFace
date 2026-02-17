@@ -51,6 +51,17 @@ public class PokerService
         return result;
     }
 
+    public async Task UpdateParticipant(Guid tableId, string newName)
+    {
+        var request = new UpdateParticipantRequest { DisplayName = newName };
+        var msg = new HttpRequestMessage(HttpMethod.Put, $"api/tables/{tableId}/participants/me");
+        msg.Content = JsonContent.Create(request);
+        msg.Headers.Add("X-Participant-Token", ParticipantToken);
+        
+        var response = await _http.SendAsync(msg);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<TableDto?> GetTable(Guid tableId)
     {
         return await _http.GetFromJsonAsync<TableDto>($"api/tables/{tableId}");

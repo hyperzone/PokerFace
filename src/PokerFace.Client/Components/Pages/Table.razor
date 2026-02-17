@@ -234,11 +234,20 @@ else
                                 @(p.DisplayName?.FirstOrDefault().ToString().ToUpper())
                             </div>
                             <div class="flex flex-col">
-                                <span class="text-sm font-medium text-gray-900">
-                                    @p.DisplayName @(p.Id == me?.Id ? "(You)" : "")
+                                <span class="text-sm font-medium text-gray-900 flex items-center gap-1">
+                                    @p.DisplayName 
+                                    @if(p.Id == me?.Id) 
+                                    { 
+                                        <span class="text-gray-400 text-xs">(You)</span>
+                                        <button class="text-gray-400 hover:text-primary ml-1" @onclick="OpenRenameModal">
+                                            <span class="material-symbols-outlined text-[16px]">edit</span>
+                                        </button>
+                                    }
                                 </span>
-                                @if (p.IsModerator) { <span class="text-[10px] text-primary font-bold uppercase">Moderator</span> }
-                                @if (p.IsObserver) { <span class="text-[10px] text-gray-500 uppercase">Observer</span> }
+                                @if (p.IsModerator)
+                                {
+                                    <span class="text-[10px] font-bold text-primary uppercase tracking-wider">Moderator</span>
+                                }@if (p.IsObserver) { <span class="text-[10px] text-gray-500 uppercase">Observer</span> }
                             </div>
                         </div>
                         <span class="w-2.5 h-2.5 rounded-full @(p.IsConnected ? "bg-success" : "bg-gray-300") shadow-sm"></span>
@@ -291,6 +300,24 @@ else
         </footer>
     }
     <!-- END: CardSelectionFooter -->
+}
+
+@if (showRenameModal)
+{
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-fade-in relative z-[60]">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Change Name</h3>
+            <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all mb-4" 
+                   @bind="renameValue" @bind:event="oninput" 
+                   placeholder="Enter new name" 
+                   @onkeydown="@(e => e.Key == "Enter" ? SubmitRename() : Task.CompletedTask)" />
+            
+            <div class="flex justify-end gap-2">
+                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors" @onclick="CloseRenameModal">Cancel</button>
+                <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors" @onclick="SubmitRename">Save</button>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -383,6 +410,20 @@ else
                         // Check duplicate
                         if (!table.Participants.Any(p => p.Id == id)) {
                             table.Participants.Add(new ParticipantDto { Id = id, DisplayName = name, IsConnected = true });
+                            StateHasChanged();
+                        }
+                    });
+                };
+                
+                RealTime.OnUserUpdated += async (id, name) => 
+                {
+                    await InvokeAsync(() => 
+                    {
+                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
+                        if (p != null) 
+                        {
+                            p.DisplayName = name;
+                            if (p.Id == me?.Id) me.DisplayName = name; // Update local 'me' ref too
                             StateHasChanged();
                         }
                     });
@@ -654,8 +695,36 @@ else
 
     private string GetCardRotation(int index)
     {
-        // Simple rotation based on position to face center?
-        // Or just random jitter for effect
         return "rotate-0"; 
+    }
+
+    // Rename Modal Logic
+    private bool showRenameModal;
+    private string renameValue = "";
+
+    private void OpenRenameModal()
+    {
+        renameValue = me?.DisplayName ?? "";
+        showRenameModal = true;
+    }
+
+    private void CloseRenameModal()
+    {
+        showRenameModal = false;
+    }
+
+    private async Task SubmitRename()
+    {
+        if (string.IsNullOrWhiteSpace(renameValue)) return;
+        
+        try 
+        {
+            await PokerService.UpdateParticipant(TableId, renameValue);
+            showRenameModal = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Rename failed: {ex.Message}");
+        }
     }
 }

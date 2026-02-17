@@ -162,6 +162,16 @@ public class TableService : ITableService
         }
     }
 
+    public void UpdateParticipant(Guid tableId, Guid participantId, string displayName)
+    {
+        if (!_tables.TryGetValue(tableId, out var table)) throw new KeyNotFoundException("Table not found");
+        
+        var participant = table.Participants.FirstOrDefault(p => p.Id == participantId);
+        if (participant == null) throw new InvalidOperationException("Participant not found");
+        
+        participant.Name = displayName;
+    }
+
     public void UpdateParticipantConnection(Guid tableId, Guid participantId, string connectionId, bool isConnected)
     {
         if (!_tables.TryGetValue(tableId, out var table)) return;

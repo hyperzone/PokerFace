@@ -18,6 +18,7 @@ public interface ITableService
     SessionDto EndSession(Guid tableId);
     
     // Updates
+    void UpdateParticipant(Guid tableId, Guid participantId, string displayName);
     void UpdateParticipantConnection(Guid tableId, Guid participantId, string connectionId, bool isConnected);
     ParticipantDto? GetParticipant(Guid tableId, Guid participantId);
     
