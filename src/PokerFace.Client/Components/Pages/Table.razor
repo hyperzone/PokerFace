@@ -472,12 +472,17 @@ else
                         var newMod = table.Participants.FirstOrDefault(x => x.Id == id);
                         if (newMod != null) newMod.IsModerator = true;
                         
-                        // Check if I am the new moderator
+                        // Check if I am the new moderator and update local state
                         if (me?.Id == id)
                         {
                             isModerator = true;
-                            // Set ModeratorToken to my ParticipantToken so API ValidateModerator finds me and checks p.IsModerator
+                            // Set ModeratorToken to my ParticipantToken for API calls
+                            // The API ValidateModerator checks if the participant associated with the token is a moderator
                             PokerService.SetTokens(PokerService.ParticipantToken!, PokerService.ParticipantToken, TableId, me.Id); 
+                        }
+                        else
+                        {
+                            isModerator = false;
                         }
                         
                         StateHasChanged();
