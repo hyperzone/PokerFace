@@ -5,6 +5,7 @@
 @inject PokerRealTimeService RealTime
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
@@ -401,7 +402,10 @@ else
                 }
 
                 // Connect SignalR
-                await RealTime.Connect("https://localhost:5001/pokerhub", TableId, me?.Id ?? Guid.Empty);
+                var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+                var hubUrl = new Uri(new Uri(apiBaseUrl), "pokerhub").ToString();
+
+                await RealTime.Connect(hubUrl, TableId, me?.Id ?? Guid.Empty);
 
                 RealTime.OnUserJoined += async (id, name) => 
                 {

@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
 // Configure the HTTP Client to point to the API
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:5001/") // Adjust if API runs on a different port
+    BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/")
 });
 
 builder.Services.AddScoped<PokerService>();
