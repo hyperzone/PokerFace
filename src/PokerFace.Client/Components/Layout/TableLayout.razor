@@ -1,0 +1,76 @@
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                primary: '#2e4da8',
+                secondary: '#f3f4f6',
+                success: '#10b981',
+                accent: '#f59e0b'
+              },
+              fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+              },
+              borderRadius: {
+                'custom': '8px',
+              }
+            }
+          },
+          corePlugins: {
+             preflight: true
+          }
+        }
+    </script>
+
+    <!-- Custom Styles from code.html -->
+    <style>
+        .poker-table-gradient {
+            background: radial-gradient(circle at center, #fff 0%, #f9fafb 100%);
+            border: 8px solid #f1f5f9
+        }
+        .card-back-pattern {
+            background-color: #2e4da8;
+            background-image: radial-gradient(#ffffff33 1px, transparent 1px), radial-gradient(#ffffff33 1px, transparent 1px);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+            border: 2px solid white
+        }
+        .perspective-card {
+            transition: transform 0.2s
+        }
+        .perspective-card:hover {
+            transform: translateY(-10px)
+        }
+        /* Simple scrollbar styling for the sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px
+        }
+    </style>
+</HeadContent>
+
+<div class="bg-gray-50 font-sans text-slate-800 h-screen overflow-hidden flex flex-col">
+    @Body
+    
+    <div id="blazor-error-ui" class="hidden fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg z-50">
+        <span class="block sm:inline">An unhandled error has occurred.</span>
+        <a href="." class="font-bold underline ml-2">Reload</a>
+        <span class="dismiss cursor-pointer float-right ml-4 font-bold text-xl">&times;</span>
+    </div>
+</div>

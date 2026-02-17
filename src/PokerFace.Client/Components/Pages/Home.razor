@@ -1,0 +1,196 @@
+﻿@page "/"
+@using PokerFace.Client.Components.Layout
+@layout LandingLayout
+@inject PokerService PokerService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>PokerFace - Planning Poker</PageTitle>
+
+<!-- Hero Section -->
+<div class="text-center mb-12 max-w-2xl">
+    <h1 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+        Poker<span class="text-primary">Face</span>
+    </h1>
+    <p class="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-medium">
+        Real-time Planning Poker for Agile Teams.
+    </p>
+</div>
+
+<!-- Action Container -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+    
+    <!-- Create New Table Section -->
+    <section class="bg-white dark:bg-slate-900/40 p-8 rounded-xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col h-full">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="bg-primary/10 p-2 rounded-lg">
+                <span class="material-symbols-outlined text-primary">add_circle</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Create New Table</h2>
+        </div>
+        
+        <EditForm Model="@createModel" OnValidSubmit="HandleCreate" class="flex-1 flex flex-col">
+            <div class="space-y-6 flex-1">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Table Name</label>
+                    <InputText @bind-Value="createModel.TableName" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white" placeholder="e.g. Sprint 24 Planning" required />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Name</label>
+                     <InputText @bind-Value="createModel.ModeratorName" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white" placeholder="Enter your name" required />
+                </div>
+                <label class="flex items-center gap-3 cursor-pointer group py-2">
+                    <div class="relative flex items-center">
+                        <InputCheckbox @bind-Value="createModel.IsObserver" class="peer sr-only" />
+                        <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </div>
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Join as Observer</span>
+                </label>
+            </div>
+            <button type="submit" disabled="@isBusy" class="mt-8 w-full bg-daze-orange hover:bg-daze-orange/90 text-white font-bold py-4 rounded-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-daze-orange/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (isBusy) { <span class="spinner-border spinner-border-sm"></span> }
+                <span class="material-symbols-outlined">rocket_launch</span>
+                Create Table
+            </button>
+        </EditForm>
+    </section>
+
+    <!-- Join Existing Table Section -->
+    <section class="bg-white dark:bg-slate-900/40 p-8 rounded-xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col h-full">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="bg-blue-500/10 p-2 rounded-lg">
+                <span class="material-symbols-outlined text-blue-500">group_add</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Join Existing Table</h2>
+        </div>
+        
+        <EditForm Model="@joinModel" OnValidSubmit="HandleJoin" class="flex-1 flex flex-col">
+            <div class="space-y-6 flex-1">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Table ID / Invite Link</label>
+                    <InputText @bind-Value="joinTableIdString" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none dark:text-white" placeholder="Paste link or ID here" required />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Name</label>
+                    <InputText @bind-Value="joinModel.DisplayName" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none dark:text-white" placeholder="Enter your name" required />
+                </div>
+                <label class="flex items-center gap-3 cursor-pointer group py-2">
+                    <div class="relative flex items-center">
+                        <InputCheckbox @bind-Value="joinModel.IsObserver" class="peer sr-only" />
+                        <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </div>
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Join as Observer</span>
+                </label>
+            </div>
+             <button type="submit" disabled="@isBusy" class="mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (isBusy) { <span class="spinner-border spinner-border-sm"></span> } 
+                <span class="material-symbols-outlined">login</span>
+                Join Table
+            </button>
+        </EditForm>
+    </section>
+</div>
+
+<!-- Secondary Info -->
+<div class="mt-16 flex flex-wrap justify-center gap-8 text-slate-500 dark:text-slate-500 text-sm font-medium">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-lg">bolt</span>
+        Instant sync
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-lg">security</span>
+        Secure sessions
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-lg">devices</span>
+        Any device
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Error!</strong>
+        <span class="block sm:inline">@errorMessage</span>
+        <span class="absolute top-0 bottom-0 right-0 px-4 py-3" @onclick="() => errorMessage = null">
+            <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+        </span>
+    </div>
+}
+
+@code {
+    private CreateTableRequest createModel = new();
+    private JoinTableRequest joinModel = new();
+    private string joinTableIdString = "";
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        // Try to pre-fill Table ID from URL query string if present?
+        // Not implemented yet
+    }
+
+    private async Task HandleCreate()
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            var result = await PokerService.CreateTable(createModel);
+            Navigation.NavigateTo($"/table/{result.TableId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            errorMessage = $"Error creating table: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task HandleJoin()
+    {
+        if (string.IsNullOrWhiteSpace(joinTableIdString) || !Guid.TryParse(joinTableIdString, out var tableId)) 
+        {
+            // Try to extract from URL if it's a full URL
+            if (Uri.TryCreate(joinTableIdString, UriKind.Absolute, out var uri))
+            {
+                var segments = uri.Segments;
+                if (segments.Length > 0 && Guid.TryParse(segments.Last(), out tableId))
+                {
+                    // Success extracting ID from URL like /table/GUID
+                }
+                else 
+                {
+                     errorMessage = "Invalid Table ID or Link.";
+                     return;
+                }
+            }
+            else
+            {
+                errorMessage = "Invalid Table ID format.";
+                return;
+            }
+        }
+        
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            var result = await PokerService.JoinTable(tableId, joinModel);
+            Navigation.NavigateTo($"/table/{result.TableId}");
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine(ex.Message);
+             errorMessage = $"Error joining table: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

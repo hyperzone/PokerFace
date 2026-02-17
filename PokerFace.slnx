@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PokerFace.Api/PokerFace.Api.csproj" />
+    <Project Path="src/PokerFace.Client/PokerFace.Client.csproj" />
+    <Project Path="src/PokerFace.Shared/PokerFace.Shared.csproj" />
+  </Folder>
+</Solution>

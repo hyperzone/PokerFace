@@ -1,0 +1,78 @@
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <!-- Design Assets -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3b82f6",
+                        "daze-orange": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+            corePlugins: {
+               preflight: true // Enable preflight now that we are isolated!
+            }
+        }
+    </script>
+</HeadContent>
+
+<div class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col font-display">
+    <!-- Top Navigation Bar -->
+    <header class="w-full border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <img src="images/logo.png" alt="Daze Logo" class="h-8 md:h-10" />
+            </div>
+            <div class="flex items-center gap-4">
+                <!--
+                <button class="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Help</button>
+                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <span class="material-symbols-outlined text-primary text-xl">person</span>
+                </div>-->
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-20">
+        @Body
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-8 border-t border-slate-200 dark:border-white/5">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-slate-500 dark:text-slate-400 text-sm">
+                © 2026 <a href="http://www.simonevitale.it">simonevitale.it</a>
+            </div>
+            <div class="flex gap-6 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                <!--<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+                <a class="hover:text-primary transition-colors" href="#">Terms</a>
+                <a class="hover:text-primary transition-colors" href="#">Support</a>-->
+            </div>
+        </div>
+    </footer>
+
+    <div id="blazor-error-ui" class="hidden fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg z-50">
+        <span class="block sm:inline">An unhandled error has occurred.</span>
+        <a href="." class="font-bold underline ml-2">Reload</a>
+        <span class="dismiss cursor-pointer float-right ml-4 font-bold text-xl">&times;</span>
+    </div>
+</div>
