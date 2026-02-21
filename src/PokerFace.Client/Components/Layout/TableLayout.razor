@@ -48,6 +48,19 @@
             border-radius: 10px
         }
     </style>
+    
+    <script>
+        // JS helper to toggle browser close/refresh confirmation
+        window.preventExit = function (prevent) {
+            if (prevent) {
+                window.onbeforeunload = function() {
+                    return "Are you sure you want to leave?";
+                };
+            } else {
+                window.onbeforeunload = null;
+            }
+        };
+    </script>
 </HeadContent>
 
 <div class="bg-gray-50 font-sans text-slate-800 h-screen overflow-hidden flex flex-col">

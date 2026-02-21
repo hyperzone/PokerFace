@@ -38,10 +38,10 @@ public class PokerHub : Hub
             _tableService.UpdateParticipantConnection(tableId, participantId, Context.ConnectionId, false);
             await Clients.Group(tableId.ToString()).SendAsync("UserDisconnected", participantId);
 
-            // Wait 5 seconds to see if they reconnect
+            // Wait 3 seconds to see if they reconnect
             // Note: This holds the Hub context/thread. In high scale this is bad, 
             // but for this app it's a simple way to implement the requirement.
-            await Task.Delay(5000);
+            await Task.Delay(3000);
 
             // Check if still disconnected
             var p = _tableService.GetParticipant(tableId, participantId);

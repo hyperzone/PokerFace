@@ -11,7 +11,7 @@
 
 <PageTitle>PokerPlanning.it | @(table?.TableName ?? "Table")</PageTitle>
 
-<NavigationLock OnBeforeInternalNavigation="ConfirmInternalNavigation" />
+<NavigationLock OnBeforeInternalNavigation="ConfirmInternalNavigation" ConfirmExternalNavigation="true" />
 
 @if (needsToJoin)
 {
@@ -137,7 +137,7 @@ else
                  }
                  @foreach (var s in table?.PreviousSessions ?? new())
                  {
-                     <div class="p-3 bg-white border border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg shadow-sm">
+                     <div @key="s.Id" class="p-3 bg-white border border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg shadow-sm">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold text-gray-900">Round #@s.SessionNumber</span>
                         </div>
@@ -184,7 +184,6 @@ else
                             @if (isModerator)
                             {
                                 <div class="mt-4 pointer-events-auto flex gap-2">
-                                     @*<input type="text" class="px-3 py-2 rounded-lg border border-gray-300 text-sm w-48 shadow-sm focus:ring-primary focus:border-primary" placeholder="Topic (optional)" @bind="newTopic" />*@
                                      <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition-all" @onclick="StartSession">Start</button>
                                 </div>
                             }
@@ -193,7 +192,6 @@ else
                 </div>
 
                 <!-- Players around the table -->
-                <!-- Dynamic Positioning Logic -->
                 @foreach (var (participant, index) in table.Participants.Where(p => !p.IsObserver).Select((p, i) => (p, i)))
                 {
                    var position = GetSeatingPosition(index, table.Participants.Count(p => !p.IsObserver));
@@ -202,7 +200,7 @@ else
                    var isRevealed = session?.IsActive == false && session.EndedAt.HasValue;
                    var voteValue = session?.Votes.FirstOrDefault(v => v.ParticipantId == participant.Id)?.Value;
 
-                   <div class="absolute flex flex-col items-center transition-all duration-500 ease-out" style="@position">
+                   <div @key="participant.Id" class="absolute flex flex-col items-center transition-all duration-500 ease-out" style="@position">
                         
                         <!-- Avatar -->
                         <div class="relative">
@@ -239,20 +237,16 @@ else
                         }
                         else if (session?.IsActive == true)
                         {
-                             <!-- Thinking / Empty Slot - Made visible as requested -->
                              <div class="mt-2 w-10 h-14 md:w-12 md:h-16 border-2 border-dashed border-gray-400 rounded-md bg-white/80 shadow-sm transition-all duration-300"></div>
                         }
                    </div>
                 }
 
             </div>
-            
-            <!-- Mobile Votes Grid (Vertical list for small screens if table view is too cramped? keeping simple for now) -->
-
         </section>
         <!-- END: TableView -->
 
-        <!-- BEGIN: RightPanel (Issues/Participants) -->
+        <!-- BEGIN: RightPanel (Participants) -->
         <aside class="hidden lg:flex w-80 bg-white border-l border-gray-200 flex-col z-20 shadow-xl">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="font-bold text-gray-900">Participants (@table.Participants.Count)</h3>
@@ -264,9 +258,9 @@ else
             <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
                  @foreach (var p in table.Participants.OrderByDescending(p => p.IsConnected).ThenBy(p => p.DisplayName))
                 {
-                    <div class="p-3 bg-white border-b border-gray-50 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg @(p.IsConnected ? "" : "opacity-60")">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs @(p.IsConnected ? $"{GetAvatarColor(p.Id)} text-white" : "bg-gray-200 text-gray-500")">
+                    <div @key="p.Id" class="p-3 bg-white border-b border-gray-50 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg @(p.IsConnected ? "" : "opacity-60")">
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xs @(p.IsConnected ? $"{GetAvatarColor(p.Id)} text-white" : "bg-gray-200 text-gray-500")">
                                 @(p.DisplayName?.FirstOrDefault().ToString().ToUpper())
                             </div>
                             <div class="flex flex-col min-w-0">
@@ -291,7 +285,6 @@ else
                 }
             </div>
             
-            <!-- Vote Stats (Only when revealed) -->
             @if (session?.IsActive == false && session.EndedAt.HasValue)
             {
                 <div class="p-4 bg-gray-50 border-t border-gray-200">
@@ -299,7 +292,7 @@ else
                     <div class="flex flex-wrap gap-2">
                         @foreach (var dist in GetVoteDistribution())
                         {
-                            <div class="flex flex-col items-center bg-white border border-gray-200 rounded p-2 min-w-[3rem] shadow-sm">
+                            <div @key="dist.Key" class="flex flex-col items-center bg-white border border-gray-200 rounded p-2 min-w-[3rem] shadow-sm">
                                 <span class="text-lg font-bold text-gray-900">@dist.Key</span>
                                 <span class="text-xs font-medium text-gray-500">@dist.Value @(dist.Value == 1 ? "vote" : "votes")</span>
                             </div>
@@ -323,7 +316,7 @@ else
                     @foreach (var val in VoteValues.UpdateAll)
                     {
                          var isSelected = myVote == val;
-                        <button class="perspective-card w-14 h-20 md:w-16 md:h-24 flex-shrink-0 rounded-lg flex items-center justify-center text-xl md:text-2xl font-bold shadow-sm transition-all duration-200
+                        <button @key="val" class="perspective-card w-14 h-20 md:w-16 md:h-24 flex-shrink-0 rounded-lg flex items-center justify-center text-xl md:text-2xl font-bold shadow-sm transition-all duration-200
                                 @(isSelected 
                                     ? "bg-primary border-2 border-primary text-white ring-4 ring-primary/20 -translate-y-4 shadow-xl scale-110" 
                                     : "bg-white border-2 border-gray-200 text-primary hover:border-primary hover:text-white hover:bg-primary hover:shadow-lg")"
@@ -389,7 +382,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // Check if we need to join
         if (PokerService.CurrentTableId != TableId || PokerService.ParticipantToken == null)
         {
             needsToJoin = true;
@@ -427,169 +419,171 @@ else
         try 
         {
             table = await PokerService.GetTable(TableId);
-            if (table == null) 
-            {
-               // Show not found UI
-            }
-            else 
+            if (table != null) 
             {
                 session = table.CurrentSession;
                 me = table.Participants.FirstOrDefault(p => p.Id == PokerService.CurrentParticipantId);
-                isModerator = PokerService.IsModerator; // Use service state as source of truth for actions
+                isModerator = PokerService.IsModerator;
                 isObserver = me?.IsObserver ?? true;
                 
-                if (session?.IsActive == true)
-                {
-                     // Try to restore vote selection if visible? 
-                }
-
                 // Connect SignalR
                 var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
                 var hubUrl = new Uri(new Uri(apiBaseUrl), "pokerhub").ToString();
 
+                // Setup Handlers BEFORE connecting
+                RealTime.OnUserJoined -= HandleUserJoined;
+                RealTime.OnUserJoined += HandleUserJoined;
+                RealTime.OnUserUpdated -= HandleUserUpdated;
+                RealTime.OnUserUpdated += HandleUserUpdated;
+                RealTime.OnUserVoted -= HandleUserVoted;
+                RealTime.OnUserVoted += HandleUserVoted;
+                RealTime.OnSessionStarted -= HandleSessionStarted;
+                RealTime.OnSessionStarted += HandleSessionStarted;
+                RealTime.OnSessionEnded -= HandleSessionEnded;
+                RealTime.OnSessionEnded += HandleSessionEnded;
+                RealTime.OnUserConnected -= HandleUserConnected;
+                RealTime.OnUserConnected += HandleUserConnected;
+                RealTime.OnUserDisconnected -= HandleUserDisconnected;
+                RealTime.OnUserDisconnected += HandleUserDisconnected;
+                RealTime.OnUserLeft -= HandleUserLeft;
+                RealTime.OnUserLeft += HandleUserLeft;
+                RealTime.OnModeratorChanged -= HandleModeratorChanged;
+                RealTime.OnModeratorChanged += HandleModeratorChanged;
+
                 await RealTime.Connect(hubUrl, TableId, me?.Id ?? Guid.Empty);
-
-                RealTime.OnUserJoined += async (id, name) => 
-                {
-                    await InvokeAsync(() => 
-                    {
-                        // Check duplicate
-                        if (!table.Participants.Any(p => p.Id == id)) {
-                            table.Participants.Add(new ParticipantDto { Id = id, DisplayName = name, IsConnected = true });
-                            StateHasChanged();
-                        }
-                    });
-                };
                 
-                RealTime.OnUserUpdated += async (id, name) => 
-                {
-                    await InvokeAsync(() => 
-                    {
-                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (p != null) 
-                        {
-                            p.DisplayName = name;
-                            if (p.Id == me?.Id) me.DisplayName = name; // Update local 'me' ref too
-                            StateHasChanged();
-                        }
-                    });
-                };
-                
-                RealTime.OnUserVoted += async (id) =>
-                {
-                    await InvokeAsync(() =>
-                    {
-                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (p != null) p.HasVoted = true;
-                        StateHasChanged();
-                    });
-                };
-                
-                RealTime.OnSessionStarted += async (s) =>
-                {
-                    await InvokeAsync(async () =>
-                    {
-                        await RunCountdown("Voting starting...", () => 
-                        {
-                            session = s;
-                            myVote = null;
-                            foreach(var p in table.Participants) p.HasVoted = false;
-                        });
-                    });
-                };
-                
-                RealTime.OnSessionEnded += async (s) =>
-                {
-                    await InvokeAsync(async () =>
-                    {
-                        await RunCountdown("Revealing votes...", () => 
-                        {
-                            session = s;
-                            if (table != null && !table.PreviousSessions.Any(ps => ps.Id == s.Id))
-                            {
-                                table.PreviousSessions.Insert(0, s);
-                            }
-                            // Ensure myVote is visible if I was not the one triggering the end
-                        });
-                    });
-                };
-                
-                 RealTime.OnUserConnected += async (id) =>
-                {
-                    await InvokeAsync(() =>
-                    {
-                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (p != null) p.IsConnected = true;
-                        StateHasChanged();
-                    });
-                };
-
-                RealTime.OnUserDisconnected += async (id) =>
-                {
-                    await InvokeAsync(() =>
-                    {
-                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (p != null) p.IsConnected = false;
-                        StateHasChanged();
-                    });
-                };
-
-                RealTime.OnUserLeft += async (id) =>
-                {
-                    await InvokeAsync(() =>
-                    {
-                        var p = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (p != null) 
-                        {
-                            table.Participants.Remove(p);
-                            // If I am the one removed (shouldn't happen via this event usually if connection closed, but logic stands)
-                            if (p.Id == me?.Id)
-                            {
-                                Navigation.NavigateTo("/");
-                            }
-                        }
-                        StateHasChanged();
-                    });
-                };
-
-                RealTime.OnModeratorChanged += async (id, name) =>
-                {
-                    await InvokeAsync(() =>
-                    {
-                        // Reset old moderators
-                        foreach (var p in table.Participants) p.IsModerator = false;
-                        
-                        // Set new
-                        var newMod = table.Participants.FirstOrDefault(x => x.Id == id);
-                        if (newMod != null) newMod.IsModerator = true;
-                        
-                        // Check if I am the new moderator and update local state
-                        if (me?.Id == id)
-                        {
-                            isModerator = true;
-                            // Set ModeratorToken to my ParticipantToken for API calls
-                            // The API ValidateModerator checks if the participant associated with the token is a moderator
-                            PokerService.SetTokens(PokerService.ParticipantToken!, PokerService.ParticipantToken, TableId, me.Id); 
-                        }
-                        else
-                        {
-                            isModerator = false;
-                        }
-                        
-                        StateHasChanged();
-                    });
-                };
+                try { await JSRuntime.InvokeVoidAsync("preventExit", true); } catch { }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
-            // table remains null, showing error UI
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    private async void HandleUserJoined(Guid id, string name)
+    {
+        await InvokeAsync(() => 
+        {
+            if (table != null && !table.Participants.Any(p => p.Id == id)) {
+                table.Participants.Add(new ParticipantDto { Id = id, DisplayName = name, IsConnected = true });
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async void HandleUserUpdated(Guid id, string name)
+    {
+        await InvokeAsync(() => 
+        {
+            var p = table?.Participants.FirstOrDefault(x => x.Id == id);
+            if (p != null) 
+            {
+                p.DisplayName = name;
+                if (p.Id == me?.Id) me.DisplayName = name;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async void HandleUserVoted(Guid id)
+    {
+        await InvokeAsync(() =>
+        {
+            var p = table?.Participants.FirstOrDefault(x => x.Id == id);
+            if (p != null) p.HasVoted = true;
+            StateHasChanged();
+        });
+    }
+
+    private async void HandleSessionStarted(SessionDto s)
+    {
+        await InvokeAsync(async () =>
+        {
+            await RunCountdown("Voting starting...", () => 
+            {
+                session = s;
+                myVote = null;
+                if (table != null) foreach(var p in table.Participants) p.HasVoted = false;
+            });
+        });
+    }
+
+    private async void HandleSessionEnded(SessionDto s)
+    {
+        await InvokeAsync(async () =>
+        {
+            await RunCountdown("Revealing votes...", () => 
+            {
+                session = s;
+                if (table != null && !table.PreviousSessions.Any(ps => ps.Id == s.Id))
+                {
+                    table.PreviousSessions.Insert(0, s);
+                }
+            });
+        });
+    }
+
+    private async void HandleUserConnected(Guid id)
+    {
+        await InvokeAsync(() =>
+        {
+            var p = table?.Participants.FirstOrDefault(x => x.Id == id);
+            if (p != null) p.IsConnected = true;
+            StateHasChanged();
+        });
+    }
+
+    private async void HandleUserDisconnected(Guid id)
+    {
+        await InvokeAsync(() =>
+        {
+            var p = table?.Participants.FirstOrDefault(x => x.Id == id);
+            if (p != null) p.IsConnected = false;
+            StateHasChanged();
+        });
+    }
+
+    private async void HandleUserLeft(Guid id)
+    {
+        await InvokeAsync(() =>
+        {
+            if (table != null)
+            {
+                var p = table.Participants.FirstOrDefault(x => x.Id == id);
+                if (p != null) 
+                {
+                    table.Participants.Remove(p);
+                    StateHasChanged();
+                }
+                if (id == me?.Id) Navigation.NavigateTo("/");
+            }
+        });
+    }
+
+    private async void HandleModeratorChanged(Guid id, string name)
+    {
+        await InvokeAsync(() =>
+        {
+            if (table == null) return;
+            foreach (var p in table.Participants) p.IsModerator = false;
+            var newMod = table.Participants.FirstOrDefault(x => x.Id == id);
+            if (newMod != null) newMod.IsModerator = true;
+            if (me?.Id == id)
+            {
+                isModerator = true;
+                PokerService.SetTokens(PokerService.ParticipantToken!, PokerService.ParticipantToken, TableId, me.Id); 
+            }
+            else
+            {
+                isModerator = false;
+            }
+            StateHasChanged();
+        });
     }
 
     private async Task RunCountdown(string label, Action onComplete)
@@ -613,195 +607,97 @@ else
 
     private async Task StartSession()
     {
-        await PokerService.StartSession(TableId, newTopic);
-        newTopic = "";
+        try { await PokerService.StartSession(TableId, newTopic); newTopic = ""; }
+        catch (Exception ex) { Console.WriteLine($"Start session error: {ex.Message}"); }
     }
     
-    private async Task StartNewSession()
-    {
-        await StartSession();
-    }
-
-    private async Task EndSession()
-    {
-        await PokerService.EndSession(TableId);
-    }
+    private async Task StartNewSession() => await StartSession();
+    private async Task EndSession() => await PokerService.EndSession(TableId);
     
     private async Task CastVote(string value)
     {
-        if (isCountingDown) return; // Prevent voting during reveal countdown
-        
-        myVote = value; // Optimistic update
-        try 
-        {
-            await PokerService.Vote(TableId, value);
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine($"Vote failed (session might be closed): {ex.Message}");
-        }
+        if (isCountingDown) return;
+        myVote = value;
+        try { await PokerService.Vote(TableId, value); }
+        catch (Exception ex) { Console.WriteLine($"Vote error: {ex.Message}"); }
     }
     
     private bool linkCopied;
-
     private async Task CopyLink()
     {
         await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", InviteLink);
-        linkCopied = true;
-        StateHasChanged();
+        linkCopied = true; StateHasChanged();
         await Task.Delay(2000);
-        linkCopied = false;
-        StateHasChanged();
+        linkCopied = false; StateHasChanged();
     }
     
-    private string GetParticipantName(Guid id)
-    {
-        return table?.Participants.FirstOrDefault(p => p.Id == id)?.DisplayName ?? "Unknown";
-    }
-
-    private string GetAverageVote()
-    {
-        return GetAverageVote(session);
-    }
-    
+    private string GetAverageVote() => GetAverageVote(session);
     private string GetAverageVote(SessionDto? s)
     {
         if (s == null || !s.Votes.Any()) return "-";
-
-        var numericVotes = s.Votes
-            .Select(v => v.Value)
-            .Where(v => double.TryParse(v, out _))
-            .Select(double.Parse)
-            .ToList();
-
-        if (!numericVotes.Any()) return "-";
-
-        return Math.Round(numericVotes.Average(), 1).ToString("0.#");
+        var numericVotes = s.Votes.Select(v => v.Value).Where(v => double.TryParse(v, out _)).Select(double.Parse).ToList();
+        return numericVotes.Any() ? Math.Round(numericVotes.Average(), 1).ToString("0.#") : "-";
     }
 
     private Dictionary<string, int> GetVoteDistribution()
     {
-        if (session == null) return new Dictionary<string, int>();
-
-        var dict = session.Votes
-            .GroupBy(v => v.Value ?? "?")
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        // Sort by the order defined in VoteValues if possible
-        return dict.OrderBy(x => Array.IndexOf(VoteValues.UpdateAll, x.Key))
-                   .ThenBy(x => x.Key)
-                   .ToDictionary(x => x.Key, x => x.Value);
+        if (session == null) return new();
+        return session.Votes.GroupBy(v => v.Value ?? "?").ToDictionary(g => g.Key, g => g.Count())
+            .OrderBy(x => Array.IndexOf(VoteValues.UpdateAll, x.Key)).ThenBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
     }
 
     public async ValueTask DisposeAsync()
     {
+        try { await JSRuntime.InvokeVoidAsync("preventExit", false); } catch { }
+        RealTime.OnUserJoined -= HandleUserJoined;
+        RealTime.OnUserUpdated -= HandleUserUpdated;
+        RealTime.OnUserVoted -= HandleUserVoted;
+        RealTime.OnSessionStarted -= HandleSessionStarted;
+        RealTime.OnSessionEnded -= HandleSessionEnded;
+        RealTime.OnUserConnected -= HandleUserConnected;
+        RealTime.OnUserDisconnected -= HandleUserDisconnected;
+        RealTime.OnUserLeft -= HandleUserLeft;
+        RealTime.OnModeratorChanged -= HandleModeratorChanged;
         await RealTime.DisposeAsync();
     }
 
     private string GetAvatarColor(Guid participantId)
     {
-        var colors = new[] 
-        { 
-            "bg-red-500", "bg-orange-500", "bg-amber-500", 
-            "bg-emerald-500", "bg-teal-500", "bg-cyan-500", 
-            "bg-indigo-500", "bg-violet-500", "bg-fuchsia-500", 
-            "bg-pink-500", "bg-rose-500", "bg-slate-500"
-        };
-        
-        // Use index to ensure uniqueness (up to palette size)
+        var colors = new[] { "bg-red-500", "bg-orange-500", "bg-amber-500", "bg-emerald-500", "bg-teal-500", "bg-cyan-500", "bg-indigo-500", "bg-violet-500", "bg-fuchsia-500", "bg-pink-500", "bg-rose-500", "bg-slate-500" };
         var index = table?.Participants.FindIndex(p => p.Id == participantId) ?? 0;
-        if (index == -1) index = 0;
-        
-        return colors[index % colors.Length];
+        return colors[Math.Max(0, index) % colors.Length];
     }
 
-    // Seating Logic 
     private string GetSeatingPosition(int index, int totalCount)
     {
          if (totalCount == 0) return "";
-         
-         // Distribute around the ellipse
-         // Formula for ellipse: x = a * cos(t), y = b * sin(t)
-         // We offset by -90deg (or -PI/2) to start from top
-         
-         // Use percentage-based positioning relative to the container center
-         // Center is 50%, 50%
-         // Width radius (rw) approx 50% (to edge), Height radius (rh) approx 50%
-         
-         // We want them slightly OUTSIDE the table. Table is smaller than the container.
-         // Table container is flex-1 p-12.
-         
          double angleStep = 2 * Math.PI / totalCount;
-         double startAngle = -Math.PI / 2; // Top
-         
+         double startAngle = -Math.PI / 2;
          double currentAngle = startAngle + (index * angleStep);
-         
-         // Radius in % relative to the section container. 
-         // Table is max-w-4xl. Let's assume the container is enough.
-         // We can use calc() in CSS.
-         // Let's rely on trignometry to place them on a circle/ellipse trajectory.
-         
-         // Adjust x and y. 
-         // x: 50% + (radiusX * cos(theta))
-         // y: 50% + (radiusY * sin(theta))
-         
-         // We need to push them out enough.
-         // Table aspect ratio is 2:1. Using same percentage for X and Y creates an ellipse that matches the table shape.
-         // 50% puts the center of the player ON the edge.
-         double rX = 52; // slightly outside
-         double rY = 52; 
-                         
+         double rX = 52; double rY = 52; 
          double x = 50 + (rX * Math.Cos(currentAngle));
          double y = 50 + (rY * Math.Sin(currentAngle));
-         
          return $"left: {x.ToString(System.Globalization.CultureInfo.InvariantCulture)}%; top: {y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%; transform: translate(-50%, -50%);";
     }
 
-    private string GetCardRotation(int index)
-    {
-        return "rotate-0"; 
-    }
-
-    // Rename Modal Logic
+    private string GetCardRotation(int index) => "rotate-0";
     private bool showRenameModal;
     private string renameValue = "";
-
-    private void OpenRenameModal()
-    {
-        renameValue = me?.DisplayName ?? "";
-        showRenameModal = true;
-    }
-
-    private void CloseRenameModal()
-    {
-        showRenameModal = false;
-    }
-
+    private void OpenRenameModal() { renameValue = me?.DisplayName ?? ""; showRenameModal = true; }
+    private void CloseRenameModal() => showRenameModal = false;
     private async Task SubmitRename()
     {
         if (string.IsNullOrWhiteSpace(renameValue)) return;
-        
-        try 
-        {
-            await PokerService.UpdateParticipant(TableId, renameValue);
-            showRenameModal = false;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Rename failed: {ex.Message}");
-        }
+        try { await PokerService.UpdateParticipant(TableId, renameValue); showRenameModal = false; }
+        catch (Exception ex) { Console.WriteLine($"Rename failed: {ex.Message}"); }
     }
 
     private async Task ConfirmInternalNavigation(LocationChangingContext context)
     {
-        // Warn if the user is actively participating
         if (!needsToJoin && !isLoading)
         {
-            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure to exit from table?");
-            if (!isConfirmed)
-            {
+            if (!(await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure to exit from table?")))
                 context.PreventNavigation();
-            }
         }
     }
 }
