@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using PokerFace.Client;
 using PokerFace.Client.Components;
 using PokerFace.Client.Services;
@@ -16,6 +17,7 @@ builder.Services.AddScoped(sp => new HttpClient
 
 builder.Services.AddScoped<PokerService>();
 builder.Services.AddScoped<PokerRealTimeService>();
+builder.Services.AddScoped<CircuitHandler, PokerCircuitHandler>();
 
 var app = builder.Build();
 
