@@ -280,6 +280,7 @@ public class TableService : ITableService
             TableName = table.Name,
             CreatedAt = table.CreatedAt,
             TotalSessions = table.Sessions.Count,
+            PreviousSessions = table.Sessions.Where(s => s.EndedAt.HasValue).OrderByDescending(s => s.Number).Select(s => MapSessionToDto(s, true)).ToList(),
             CurrentSession = table.CurrentSession != null ? MapSessionToDto(table.CurrentSession, false) : (table.Sessions.LastOrDefault() != null ? MapSessionToDto(table.Sessions.Last(), true) : null),
             Participants = table.Participants.Select(p => new ParticipantDto
             {

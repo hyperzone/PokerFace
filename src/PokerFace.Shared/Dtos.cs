@@ -11,6 +11,7 @@ public class TableDto
     public DateTime CreatedAt { get; set; }
     public List<ParticipantDto> Participants { get; set; } = new();
     public SessionDto? CurrentSession { get; set; }
+    public List<SessionDto> PreviousSessions { get; set; } = new();
     public int TotalSessions { get; set; }
 }
 

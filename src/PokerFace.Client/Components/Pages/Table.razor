@@ -11,7 +11,7 @@
 
 <PageTitle>PokerPlanning.it | @(table?.TableName ?? "Table")</PageTitle>
 
-<NavigationLock ConfirmExternalNavigation="@(!needsToJoin && !isLoading)" OnBeforeInternalNavigation="ConfirmInternalNavigation" />
+<NavigationLock OnBeforeInternalNavigation="ConfirmInternalNavigation" />
 
 @if (needsToJoin)
 {
@@ -123,6 +123,32 @@ else
                  <h2 class="text-3xl font-medium text-white/80">@countdownLabel</h2>
             </div>
         }
+
+        <!-- BEGIN: LeftPanel (History) -->
+        <aside class="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col z-20 shadow-xl">
+            <div class="p-4 border-b border-gray-100">
+                <h3 class="font-bold text-gray-900">History</h3>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                 @if (table?.PreviousSessions.Count == 0)
+                 {
+                     <div class="p-4 text-center text-gray-400 text-sm">No previous rounds.</div>
+                 }
+                 @foreach (var s in table?.PreviousSessions ?? new())
+                 {
+                     <div class="p-3 bg-white border border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-900">Round #@s.SessionNumber</span>
+                        </div>
+                        <div class="font-black text-xl text-primary">
+                            @GetAverageVote(s)
+                        </div>
+                     </div>
+                 }
+            </div>
+        </aside>
+        <!-- END: LeftPanel -->
 
         <!-- BEGIN: TableView -->
         <section class="flex-1 relative flex flex-col items-center justify-center p-4 md:p-12 bg-slate-50 overflow-hidden">
@@ -243,8 +269,8 @@ else
                             <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs @(p.IsConnected ? $"{GetAvatarColor(p.Id)} text-white" : "bg-gray-200 text-gray-500")">
                                 @(p.DisplayName?.FirstOrDefault().ToString().ToUpper())
                             </div>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-medium text-gray-900 flex items-center gap-1">
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-sm font-medium text-gray-900 flex items-center gap-1 truncate">
                                     @p.DisplayName 
                                     @if(p.Id == me?.Id) 
                                     { 
@@ -260,7 +286,7 @@ else
                                 }@if (p.IsObserver) { <span class="text-[10px] text-gray-500 uppercase">Observer</span> }
                             </div>
                         </div>
-                        <span class="w-2.5 h-2.5 rounded-full @(p.IsConnected ? "bg-success" : "bg-gray-300") shadow-sm"></span>
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 @(p.IsConnected ? "bg-green-500" : "bg-slate-300") shadow-sm"></span>
                     </div>
                 }
             </div>
@@ -479,6 +505,10 @@ else
                         await RunCountdown("Revealing votes...", () => 
                         {
                             session = s;
+                            if (table != null && !table.PreviousSessions.Any(ps => ps.Id == s.Id))
+                            {
+                                table.PreviousSessions.Insert(0, s);
+                            }
                             // Ensure myVote is visible if I was not the one triggering the end
                         });
                     });
@@ -631,9 +661,14 @@ else
 
     private string GetAverageVote()
     {
-        if (session == null || !session.Votes.Any()) return "-";
+        return GetAverageVote(session);
+    }
+    
+    private string GetAverageVote(SessionDto? s)
+    {
+        if (s == null || !s.Votes.Any()) return "-";
 
-        var numericVotes = session.Votes
+        var numericVotes = s.Votes
             .Select(v => v.Value)
             .Where(v => double.TryParse(v, out _))
             .Select(double.Parse)
