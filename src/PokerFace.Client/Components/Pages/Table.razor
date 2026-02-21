@@ -11,6 +11,8 @@
 
 <PageTitle>PokerPlanning.it | @(table?.TableName ?? "Table")</PageTitle>
 
+<NavigationLock ConfirmExternalNavigation="@(!needsToJoin && !isLoading)" OnBeforeInternalNavigation="ConfirmInternalNavigation" />
+
 @if (needsToJoin)
 {
     @* Join Screen - Kept simple but styled with Tailwind *@
@@ -286,7 +288,7 @@ else
     <!-- END: GameRoomArea -->
 
     <!-- BEGIN: CardSelectionFooter -->
-    @if (!isObserver && session?.IsActive == true)
+    @if (!isObserver && session?.IsActive == true && !isCountingDown)
     {
         <footer class="bg-white border-t border-gray-200 p-4 md:p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-30 relative">
             <div class="max-w-6xl mx-auto flex flex-col items-center">
@@ -597,8 +599,17 @@ else
     
     private async Task CastVote(string value)
     {
+        if (isCountingDown) return; // Prevent voting during reveal countdown
+        
         myVote = value; // Optimistic update
-        await PokerService.Vote(TableId, value);
+        try 
+        {
+            await PokerService.Vote(TableId, value);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Vote failed (session might be closed): {ex.Message}");
+        }
     }
     
     private bool linkCopied;
@@ -743,6 +754,19 @@ else
         catch (Exception ex)
         {
             Console.WriteLine($"Rename failed: {ex.Message}");
+        }
+    }
+
+    private async Task ConfirmInternalNavigation(LocationChangingContext context)
+    {
+        // Warn if the user is actively participating
+        if (!needsToJoin && !isLoading)
+        {
+            var isConfirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure to exit from table?");
+            if (!isConfirmed)
+            {
+                context.PreventNavigation();
+            }
         }
     }
 }
