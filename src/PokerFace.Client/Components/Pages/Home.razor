@@ -125,10 +125,9 @@
     private bool isBusy;
     private string? errorMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Try to pre-fill Table ID from URL query string if present?
-        // Not implemented yet
+        await PokerService.CleanupTables();
     }
 
     private async Task HandleCreate()

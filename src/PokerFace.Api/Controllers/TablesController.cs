@@ -21,6 +21,14 @@ public class TablesController : ControllerBase
         _hubContext = hubContext;
     }
 
+    [HttpPost("cleanup")]
+    public IActionResult CleanupTables()
+    {
+        Console.WriteLine("[TablesController] Ricevuta richiesta POST /api/tables/cleanup");
+        _tableService.CleanupEmptyTables();
+        return Ok();
+    }
+
     [HttpPost]
     public ActionResult<CreateTableResponse> CreateTable([FromBody] CreateTableRequest request)
     {
@@ -28,7 +36,7 @@ public class TablesController : ControllerBase
         return CreatedAtAction(nameof(GetTable), new { tableId = result.TableId }, result);
     }
 
-    [HttpGet("{tableId}")]
+    [HttpGet("{tableId:guid}")]
     public ActionResult<TableDto> GetTable(Guid tableId)
     {
         var table = _tableService.GetTable(tableId);
@@ -40,7 +48,7 @@ public class TablesController : ControllerBase
         return Ok(_tableService.MapToDto(table, false)); 
     }
 
-    [HttpPost("{tableId}/participants")]
+    [HttpPost("{tableId:guid}/participants")]
     public async Task<ActionResult<JoinTableResponse>> JoinTable(Guid tableId, [FromBody] JoinTableRequest request)
     {
         try
@@ -58,7 +66,7 @@ public class TablesController : ControllerBase
         }
     }
 
-    [HttpPut("{tableId}/participants/me")]
+    [HttpPut("{tableId:guid}/participants/me")]
     public async Task<IActionResult> UpdateParticipant(Guid tableId, [FromBody] UpdateParticipantRequest request, [FromHeader(Name = "X-Participant-Token")] string token)
     {
         if (!_tableService.ValidateParticipant(tableId, token, out var participant)) return Unauthorized();
@@ -78,7 +86,7 @@ public class TablesController : ControllerBase
         }
     }
 
-    [HttpPost("{tableId}/sessions")]
+    [HttpPost("{tableId:guid}/sessions")]
     public async Task<ActionResult<SessionDto>> StartSession(Guid tableId, [FromBody] StartSessionRequest request, [FromHeader(Name = "X-Participant-Token")] string token)
     {
         if (!_tableService.ValidateModerator(tableId, token)) return Forbid();
@@ -102,7 +110,7 @@ public class TablesController : ControllerBase
         }
     }
 
-    [HttpGet("{tableId}/sessions/current")]
+    [HttpGet("{tableId:guid}/sessions/current")]
     public ActionResult<SessionDto> GetSession(Guid tableId)
     {
         var table = _tableService.GetTable(tableId);
@@ -113,7 +121,7 @@ public class TablesController : ControllerBase
         return Ok(_tableService.MapToDto(table, false).CurrentSession); 
     }
 
-    [HttpPost("{tableId}/sessions/current/votes")]
+    [HttpPost("{tableId:guid}/sessions/current/votes")]
     public async Task<IActionResult> Vote(Guid tableId, [FromBody] VoteRequest request, [FromHeader(Name = "X-Participant-Token")] string token)
     {
         if (!_tableService.ValidateParticipant(tableId, token, out var participant)) return Unauthorized();
@@ -134,7 +142,7 @@ public class TablesController : ControllerBase
         }
     }
 
-    [HttpPut("{tableId}/sessions/current/end")]
+    [HttpPut("{tableId:guid}/sessions/current/end")]
     public async Task<ActionResult<SessionDto>> EndSession(Guid tableId, [FromHeader(Name = "X-Participant-Token")] string token)
     {
         if (!_tableService.ValidateModerator(tableId, token)) return Forbid();

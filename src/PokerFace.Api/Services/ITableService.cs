@@ -26,4 +26,6 @@ public interface ITableService
     bool RemoveParticipant(Guid tableId, Guid participantId, out Guid? newModeratorId);
     
     TableDto MapToDto(Table table, bool revealVotes);
+    
+    void CleanupEmptyTables();
 }

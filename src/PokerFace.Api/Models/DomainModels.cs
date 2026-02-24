@@ -14,6 +14,7 @@ public class Table
     public List<Session> Sessions { get; set; } = new();
     
     public Session? CurrentSession => Sessions.Find(s => s.IsActive);
+    public bool IsDeleted { get; set; }
 }
 
 public class Participant

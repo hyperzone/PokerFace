@@ -14,6 +14,8 @@ public class TableService : ITableService
 
     public CreateTableResponse CreateTable(CreateTableRequest request)
     {
+        CleanupEmptyTables();
+
         var table = new Table
         {
             Name = request.TableName,
@@ -43,12 +45,17 @@ public class TableService : ITableService
 
     public Table? GetTable(Guid tableId)
     {
+        CleanupEmptyTables();
+
         _tables.TryGetValue(tableId, out var table);
+        if (table != null && table.IsDeleted) return null;
         return table;
     }
 
     public JoinTableResponse JoinTable(Guid tableId, JoinTableRequest request)
     {
+        CleanupEmptyTables();
+
         if (!_tables.TryGetValue(tableId, out var table))
         {
             throw new KeyNotFoundException("Table not found");
@@ -64,6 +71,7 @@ public class TableService : ITableService
 
         lock (table)
         {
+            if (table.IsDeleted) throw new KeyNotFoundException("Table not found");
             table.Participants.Add(participant);
         }
 
@@ -80,7 +88,7 @@ public class TableService : ITableService
     public bool ValidateParticipant(Guid tableId, string token, out Participant participant)
     {
         participant = null!;
-        if (!_tables.TryGetValue(tableId, out var table)) return false;
+        if (!_tables.TryGetValue(tableId, out var table) || table.IsDeleted) return false;
 
         var p = table.Participants.FirstOrDefault(x => x.Token == token);
         if (p == null) return false;
@@ -92,7 +100,7 @@ public class TableService : ITableService
 
     public bool ValidateModerator(Guid tableId, string token)
     {
-        if (!_tables.TryGetValue(tableId, out var table)) return false;
+        if (!_tables.TryGetValue(tableId, out var table) || table.IsDeleted) return false;
         
         // Classic check
         if (table.ModeratorToken == token) return true;
@@ -184,6 +192,13 @@ public class TableService : ITableService
                 if (!isConnected)
                 {
                     p.DisconnectedAt = DateTime.UtcNow;
+                    
+                    // Se tutti i partecipanti del tavolo risultano disconnessi
+                    if (table.Participants.All(x => x.DisconnectedAt != null))
+                    {
+                        table.IsDeleted = true;
+                        _tables.TryRemove(tableId, out _);
+                    }
                 }
                 else
                 {
@@ -224,6 +239,13 @@ public class TableService : ITableService
             if (p == null) return false;
 
             table.Participants.Remove(p);
+
+            if (table.Participants.Count == 0)
+            {
+                table.IsDeleted = true;
+                _tables.TryRemove(tableId, out _);
+                return true;
+            }
 
             // If moderator left, reassign
             if (p.IsModerator && table.Participants.Any())
@@ -316,5 +338,35 @@ public class TableService : ITableService
     private string GenerateToken()
     {
         return Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("/", "_").Replace("+", "-").TrimEnd('=');
+    }
+
+    public void CleanupEmptyTables()
+    {
+        Console.WriteLine($"[TableService] Esecuzione CleanupEmptyTables() iniziata. Tavoli totali attuali in memoria: {_tables.Count}");
+
+        // Rimuove i tavoli segnati come eliminati OR che hanno 0 partecipanti OR in cui tutti sono palesemente disconnessi 
+        // e lo sono da più di 1 minuto per evitare incroci strani
+        var emptyTableIds = _tables
+            .Where(kvp => kvp.Value.IsDeleted || 
+                          kvp.Value.Participants.Count == 0 || 
+                          (kvp.Value.Participants.All(p => p.DisconnectedAt.HasValue) && kvp.Value.Participants.Any()))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        if (emptyTableIds.Any())
+        {
+            Console.WriteLine($"[TableService] Trovati {emptyTableIds.Count} tavoli da eliminare.");
+            foreach (var id in emptyTableIds)
+            {
+                if (_tables.TryRemove(id, out _))
+                {
+                    Console.WriteLine($"[TableService] Tavolo rimosso con successo: {id}");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("[TableService] Nessun tavolo da pulire in questo momento.");
+        }
     }
 }

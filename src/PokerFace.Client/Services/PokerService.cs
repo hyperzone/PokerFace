@@ -67,6 +67,28 @@ public class PokerService
         return await _http.GetFromJsonAsync<TableDto>($"api/tables/{tableId}");
     }
 
+    public async Task CleanupTables()
+    {
+        try 
+        {
+            Console.WriteLine("[PokerService] Chiamata all'endpoint cleanup in corso...");
+            var msg = new HttpRequestMessage(HttpMethod.Post, "api/tables/cleanup");
+            var response = await _http.SendAsync(msg);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[PokerService] Errore chiamata cleanup: {response.StatusCode}");
+            }
+            else
+            {
+                Console.WriteLine("[PokerService] Chiamata cleanup riuscita!");
+            }
+        } 
+        catch (Exception ex)
+        { 
+            Console.WriteLine($"[PokerService] Eccezione durante cleanup: {ex.Message}");
+        }
+    }
+
     public async Task StartSession(Guid tableId, string? topic)
     {
         if (ModeratorToken == null) throw new InvalidOperationException("Not moderator");
