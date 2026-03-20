@@ -11,6 +11,37 @@
 
 <PageTitle>PokerPlanning.it | @(table?.TableName ?? "Table")</PageTitle>
 
+<script>
+    window.pokerSound = {
+        playDing: function() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.type = 'sine';
+                // Higher frequency for a cleaner "din"
+                osc.frequency.setValueAtTime(987.77, ctx.currentTime); // B5 note
+                
+                // Envelope for percussive "din" sound
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.01); // Fast attack
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8); // Long decay
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.9);
+                
+                setTimeout(() => { ctx.close(); }, 1000);
+            } catch(e) { console.error(e); }
+        }
+    };
+</script>
+
 <NavigationLock OnBeforeInternalNavigation="ConfirmInternalNavigation" ConfirmExternalNavigation="true" />
 
 @if (needsToJoin)
@@ -390,6 +421,10 @@ else
     private int countdownValue;
     private string countdownLabel = "";
     
+    // Sound Loop State
+    private System.Threading.CancellationTokenSource? soundCts;
+    private bool allVotedSoundTriggered;
+
     private string InviteLink => Navigation.Uri;
 
     protected override async Task OnInitializedAsync()
@@ -529,7 +564,44 @@ else
             var p = table?.Participants.FirstOrDefault(x => x.Id == id);
             if (p != null) p.HasVoted = true;
             StateHasChanged();
+            CheckAllVoted();
         });
+    }
+
+    private void CheckAllVoted()
+    {
+        if (session == null || !session.IsActive || allVotedSoundTriggered || table == null) return;
+
+        var voters = table.Participants.Where(p => !p.IsObserver).ToList();
+        if (voters.Count > 0 && voters.All(p => p.HasVoted))
+        {
+            allVotedSoundTriggered = true;
+            StartBeepLoop();
+        }
+    }
+
+    private void StartBeepLoop()
+    {
+        soundCts?.Cancel();
+        soundCts = new System.Threading.CancellationTokenSource();
+        var token = soundCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await JSRuntime.InvokeVoidAsync("window.pokerSound.playDing");
+                await Task.Delay(2000, token);
+            }
+        }, token);
+    }
+
+    private void StopBeepLoop()
+    {
+        soundCts?.Cancel();
+        soundCts?.Dispose();
+        soundCts = null;
+        allVotedSoundTriggered = false;
     }
 
     private async void HandleSessionStarted(SessionDto s)
@@ -538,6 +610,7 @@ else
         {
             await RunCountdown("Voting starting...", () => 
             {
+                StopBeepLoop();
                 session = s;
                 myVote = null;
                 if (table != null) foreach(var p in table.Participants) p.HasVoted = false;
@@ -551,6 +624,7 @@ else
         {
             await RunCountdown("Revealing votes...", () => 
             {
+                StopBeepLoop();
                 session = s;
                 if (table != null && !table.PreviousSessions.Any(ps => ps.Id == s.Id))
                 {
@@ -701,6 +775,7 @@ else
         RealTime.OnUserDisconnected -= HandleUserDisconnected;
         RealTime.OnUserLeft -= HandleUserLeft;
         RealTime.OnModeratorChanged -= HandleModeratorChanged;
+        StopBeepLoop();
         await RealTime.DisposeAsync();
     }
 
