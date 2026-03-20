@@ -8,6 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<AppStatsService>();
 builder.Services.AddSingleton<ITableService, TableService>();
 
 // CORS is needed if Client and API are on different ports

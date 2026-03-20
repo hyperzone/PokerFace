@@ -130,4 +130,17 @@ public class PokerService
         var response = await _http.SendAsync(msg);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<AppStatsDto?> GetAppStatsAsync()
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<AppStatsDto>("api/stats");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PokerService] Errore recupero statistiche: {ex.Message}");
+            return null;
+        }
+    }
 }

@@ -101,11 +101,31 @@
         <span class="material-symbols-outlined text-primary text-lg">security</span>
         Secure sessions
     </div>
-    <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-lg">devices</span>
-        Any device
-    </div>
 </div>
+
+@if (appStats != null)
+{
+    <div class="mt-12 mb-8 flex flex-wrap justify-center gap-6 text-slate-700 dark:text-slate-300 w-full max-w-3xl">
+        <div class="flex-1 min-w-[150px] bg-white dark:bg-slate-900/40 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 text-center border border-slate-200 dark:border-white/5">
+            <div class="text-4xl font-black text-primary mb-2">@appStats.TotalTablesCreated</div>
+            <div class="text-xs uppercase tracking-wider font-bold opacity-70 flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-sm">table_restaurant</span> Tables Created
+            </div>
+        </div>
+        <div class="flex-1 min-w-[150px] bg-white dark:bg-slate-900/40 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 text-center border border-slate-200 dark:border-white/5">
+            <div class="text-4xl font-black text-blue-500 mb-2">@appStats.TotalPlayersConnected</div>
+            <div class="text-xs uppercase tracking-wider font-bold opacity-70 flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-sm">group</span> Total Players
+            </div>
+        </div>
+        <div class="flex-1 min-w-[150px] bg-white dark:bg-slate-900/40 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 text-center border border-slate-200 dark:border-white/5">
+            <div class="text-4xl font-black text-green-500 mb-2">@appStats.MaxSimultaneousUsersAtTable</div>
+            <div class="text-xs uppercase tracking-wider font-bold opacity-70 flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-sm">groups</span> Max Users / Table
+            </div>
+        </div>
+    </div>
+}
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -124,10 +144,12 @@
     private string joinTableIdString = "";
     private bool isBusy;
     private string? errorMessage;
+    private AppStatsDto? appStats;
 
     protected override async Task OnInitializedAsync()
     {
         await PokerService.CleanupTables();
+        appStats = await PokerService.GetAppStatsAsync();
     }
 
     private async Task HandleCreate()

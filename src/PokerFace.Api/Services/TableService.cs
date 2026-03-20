@@ -11,6 +11,12 @@ namespace PokerFace.Api.Services;
 public class TableService : ITableService
 {
     private readonly ConcurrentDictionary<Guid, Table> _tables = new();
+    private readonly AppStatsService _statsService;
+
+    public TableService(AppStatsService statsService)
+    {
+        _statsService = statsService;
+    }
 
     public CreateTableResponse CreateTable(CreateTableRequest request)
     {
@@ -32,6 +38,10 @@ public class TableService : ITableService
         
         table.Participants.Add(moderator);
         _tables[table.Id] = table;
+
+        _statsService.IncrementTotalTables();
+        _statsService.IncrementTotalPlayers();
+        _statsService.UpdateMaxSimultaneousUsers(1);
 
         return new CreateTableResponse
         {
@@ -73,6 +83,9 @@ public class TableService : ITableService
         {
             if (table.IsDeleted) throw new KeyNotFoundException("Table not found");
             table.Participants.Add(participant);
+            
+            _statsService.IncrementTotalPlayers();
+            _statsService.UpdateMaxSimultaneousUsers(table.Participants.Count(p => p.DisconnectedAt == null));
         }
 
         return new JoinTableResponse
@@ -204,6 +217,7 @@ public class TableService : ITableService
                 {
                     p.DisconnectedAt = null;
                     p.LastHeartbeat = DateTime.UtcNow;
+                    _statsService.UpdateMaxSimultaneousUsers(table.Participants.Count(x => x.DisconnectedAt == null));
                 }
             }
         }

@@ -88,3 +88,10 @@ public class VoteRequest
 {
     public string Value { get; set; } = string.Empty;
 }
+
+public class AppStatsDto
+{
+    public int TotalTablesCreated { get; set; }
+    public int TotalPlayersConnected { get; set; }
+    public int MaxSimultaneousUsersAtTable { get; set; }
+}
