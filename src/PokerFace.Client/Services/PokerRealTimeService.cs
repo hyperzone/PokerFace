@@ -23,6 +23,7 @@ public class PokerRealTimeService : IAsyncDisposable
     public event Action<Guid>? OnUserVoted; // ParticipantId
     public event Action<SessionDto>? OnSessionStarted;
     public event Action<SessionDto>? OnSessionEnded;
+    public event Action<Guid, Guid, string>? OnEmojiThrown; // SenderId, TargetId, Emoji
 
     public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
@@ -53,6 +54,7 @@ public class PokerRealTimeService : IAsyncDisposable
         _hubConnection.On<Guid>("UserVoted", (id) => OnUserVoted?.Invoke(id));
         _hubConnection.On<SessionDto>("SessionStarted", (session) => OnSessionStarted?.Invoke(session));
         _hubConnection.On<SessionDto>("SessionEnded", (session) => OnSessionEnded?.Invoke(session));
+        _hubConnection.On<Guid, Guid, string>("EmojiThrown", (sender, target, emoji) => OnEmojiThrown?.Invoke(sender, target, emoji));
 
         // Re-join the SignalR group after automatic reconnection
         _hubConnection.Reconnected += async (connectionId) =>
@@ -87,6 +89,14 @@ public class PokerRealTimeService : IAsyncDisposable
         if (_hubUrl != null)
         {
             await Connect(_hubUrl, _tableId, _participantId);
+        }
+    }
+
+    public async Task ThrowEmoji(Guid targetId, string emoji)
+    {
+        if (_hubConnection is not null && IsConnected)
+        {
+            await _hubConnection.InvokeAsync("ThrowEmoji", targetId, emoji);
         }
     }
 

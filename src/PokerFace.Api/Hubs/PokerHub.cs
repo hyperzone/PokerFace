@@ -66,4 +66,13 @@ public class PokerHub : Hub
         
         await base.OnDisconnectedAsync(exception);
     }
+
+    public async Task ThrowEmoji(Guid targetId, string emoji)
+    {
+        if (Context.Items.TryGetValue("TableId", out var tableIdObj) && tableIdObj is Guid tableId &&
+            Context.Items.TryGetValue("ParticipantId", out var senderIdObj) && senderIdObj is Guid senderId)
+        {
+            await Clients.Group(tableId.ToString()).SendAsync("EmojiThrown", senderId, targetId, emoji);
+        }
+    }
 }

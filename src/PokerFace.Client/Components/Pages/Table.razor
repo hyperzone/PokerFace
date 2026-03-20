@@ -38,6 +38,58 @@
                 
                 setTimeout(() => { ctx.close(); }, 1000);
             } catch(e) { console.error(e); }
+        },
+        playWhoosh: function() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.7);
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 1.0);
+                setTimeout(() => ctx.close(), 1100);
+            } catch(e) {}
+        },
+        playTrumpet: function() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const playNote = (freq, start, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const filter = ctx.createBiquadFilter();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(200, ctx.currentTime + start);
+                    filter.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + start + 0.1);
+
+                    gain.gain.setValueAtTime(0, ctx.currentTime + start);
+                    gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + start + 0.05);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + duration);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(ctx.currentTime + start);
+                    osc.stop(ctx.currentTime + start + duration);
+                }
+                // Short fanfare blast (G4, G4, C5)
+                playNote(392, 0, 0.2); 
+                playNote(392, 0.25, 0.3); 
+                playNote(523.25, 0.6, 0.8); 
+                setTimeout(() => ctx.close(), 2000);
+            } catch(e) {}
         }
     };
 </script>
@@ -127,6 +179,45 @@ else
         </div>
     </header>
     <!-- END: MainHeader -->
+
+    <style>
+        .emoji-projectile {
+            position: absolute;
+            z-index: 100;
+            pointer-events: none;
+            font-size: 2.5rem;
+            animation: fly-emoji 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        @@keyframes fly-emoji {
+            0% {
+                left: var(--start-x);
+                top: var(--start-y);
+                transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5) rotate(15deg);
+            }
+            100% {
+                left: var(--end-x);
+                top: var(--end-y);
+                transform: translate(-50%, -50%) scale(0.8) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .emoji-menu-enter {
+            animation: emoji-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @@keyframes emoji-pop {
+            0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+    </style>
 
     <!-- BEGIN: GameRoomArea -->
     <main class="flex-1 flex overflow-hidden relative">
@@ -233,6 +324,14 @@ else
                     </div>
                 </div>
 
+                <!-- Active Emoji Animations -->
+                @foreach (var anim in activeAnimations)
+                {
+                    <div @key="anim.Id" class="emoji-projectile" style="--start-x: @(anim.StartX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; --start-y: @(anim.StartY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; --end-x: @(anim.EndX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; --end-y: @(anim.EndY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%;">
+                        @anim.Emoji
+                    </div>
+                }
+
                 <!-- Players around the table -->
                 @foreach (var (participant, index) in table.Participants.Where(p => !p.IsObserver).Select((p, i) => (p, i)))
                 {
@@ -245,13 +344,26 @@ else
                    <div @key="participant.Id" class="absolute flex flex-col items-center transition-all duration-500 ease-out" style="@position">
                         
                         <!-- Avatar -->
-                        <div class="relative">
-                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white shadow-lg flex items-center justify-center mb-2 overflow-hidden @($"{GetAvatarColor(participant.Id)} text-white") transition-colors duration-300">
+                        <div class="relative cursor-pointer group" @onclick="() => ToggleEmojiMenu(participant.Id)" @onclick:stopPropagation="true">
+                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-white shadow-lg flex items-center justify-center mb-2 overflow-hidden @($"{GetAvatarColor(participant.Id)} text-white") transition-all duration-300 group-hover:scale-110 group-hover:ring-4 group-hover:ring-primary/20">
                                 <div class="w-full h-full flex items-center justify-center font-bold text-lg md:text-xl">
                                     @(participant.DisplayName?.FirstOrDefault().ToString().ToUpper())
                                 </div>
                             </div>
                             @if (isMe) { <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-yellow-400 text-[10px] font-bold px-1.5 rounded-full text-yellow-900 border border-white">YOU</div> }
+                            
+                            <!-- Emoji Context Menu -->
+                            @if (emojiMenuTargetId == participant.Id)
+                            {
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl border border-gray-100 dark:border-white/10 p-1.5 flex gap-1 z-[100] emoji-menu-enter">
+                                    @foreach (var emoji in new[] { "✈️", "🏀", "⚾", "🤘" })
+                                    {
+                                        <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-xl" @onclick="() => ThrowEmoji(participant.Id, emoji)" @onclick:stopPropagation="true">
+                                            @emoji
+                                        </button>
+                                    }
+                                </div>
+                            }
                         </div>
                         
                         <!-- Name Badge -->
@@ -421,6 +533,19 @@ else
     private int countdownValue;
     private string countdownLabel = "";
     
+    // Emoji Animation state
+    private Guid? emojiMenuTargetId;
+    private List<EmojiAnimation> activeAnimations = new();
+
+    public class EmojiAnimation {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Emoji { get; set; } = "";
+        public double StartX { get; set; }
+        public double StartY { get; set; }
+        public double EndX { get; set; }
+        public double EndY { get; set; }
+    }
+
     // Sound Loop State
     private System.Threading.CancellationTokenSource? soundCts;
     private bool allVotedSoundTriggered;
@@ -514,6 +639,8 @@ else
                 RealTime.OnUserLeft += HandleUserLeft;
                 RealTime.OnModeratorChanged -= HandleModeratorChanged;
                 RealTime.OnModeratorChanged += HandleModeratorChanged;
+                RealTime.OnEmojiThrown -= HandleEmojiThrown;
+                RealTime.OnEmojiThrown += HandleEmojiThrown;
 
                 await RealTime.Connect(hubUrl, TableId, me?.Id ?? Guid.Empty);
                 
@@ -626,6 +753,13 @@ else
             {
                 StopBeepLoop();
                 session = s;
+
+                // Test for Unanimity (if more than 1 vote and all same)
+                if (s.Votes.Count > 1 && s.Votes.Select(v => v.Value).Distinct().Count() == 1)
+                {
+                    _ = JSRuntime.InvokeVoidAsync("window.pokerSound.playTrumpet");
+                }
+
                 if (table != null && !table.PreviousSessions.Any(ps => ps.Id == s.Id))
                 {
                     table.PreviousSessions.Insert(0, s);
@@ -690,6 +824,62 @@ else
             }
             StateHasChanged();
         });
+    }
+
+    private async void HandleEmojiThrown(Guid senderId, Guid targetId, string emoji)
+    {
+        await InvokeAsync(async () =>
+        {
+            await JSRuntime.InvokeVoidAsync("window.pokerSound.playWhoosh");
+            var senderPos = GetSeatingCoordinates(senderId);
+            var targetPos = GetSeatingCoordinates(targetId);
+
+            var anim = new EmojiAnimation
+            {
+                Emoji = emoji,
+                StartX = senderPos.x,
+                StartY = senderPos.y,
+                EndX = targetPos.x,
+                EndY = targetPos.y
+            };
+
+            activeAnimations.Add(anim);
+            StateHasChanged();
+
+            await Task.Delay(1000);
+            activeAnimations.Remove(anim);
+            StateHasChanged();
+        });
+    }
+
+    private void ToggleEmojiMenu(Guid targetId)
+    {
+        if (targetId == me?.Id) return;
+        if (emojiMenuTargetId == targetId) emojiMenuTargetId = null;
+        else emojiMenuTargetId = targetId;
+    }
+
+    private async Task ThrowEmoji(Guid targetId, string emoji)
+    {
+        emojiMenuTargetId = null;
+        await RealTime.ThrowEmoji(targetId, emoji);
+    }
+
+    private (double x, double y) GetSeatingCoordinates(Guid participantId)
+    {
+        if (table == null) return (50, 50);
+        var voters = table.Participants.Where(p => !p.IsObserver).ToList();
+        var index = voters.FindIndex(p => p.Id == participantId);
+        if (index == -1) return (50, 50);
+
+        int totalCount = voters.Count;
+        double angleStep = 2 * Math.PI / totalCount;
+        double startAngle = -Math.PI / 2;
+        double currentAngle = startAngle + (index * angleStep);
+        double rX = 52; double rY = 52; 
+        double x = 50 + (rX * Math.Cos(currentAngle));
+        double y = 50 + (rY * Math.Sin(currentAngle));
+        return (x, y);
     }
 
     private async Task RunCountdown(string label, Action onComplete)
@@ -775,6 +965,7 @@ else
         RealTime.OnUserDisconnected -= HandleUserDisconnected;
         RealTime.OnUserLeft -= HandleUserLeft;
         RealTime.OnModeratorChanged -= HandleModeratorChanged;
+        RealTime.OnEmojiThrown -= HandleEmojiThrown;
         StopBeepLoop();
         await RealTime.DisposeAsync();
     }
