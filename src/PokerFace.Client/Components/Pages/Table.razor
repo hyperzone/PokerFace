@@ -659,13 +659,14 @@ else
         }
     }
 
-    private async void HandleUserJoined(Guid id, string name)
+    private async void HandleUserJoined(Guid id, string name, bool isObserver)
     {
         await InvokeAsync(() => 
         {
             if (table != null && !table.Participants.Any(p => p.Id == id)) {
-                table.Participants.Add(new ParticipantDto { Id = id, DisplayName = name, IsConnected = true });
+                table.Participants.Add(new ParticipantDto { Id = id, DisplayName = name, IsConnected = true, IsObserver = isObserver });
                 StateHasChanged();
+                CheckAllVoted();
             }
         });
     }

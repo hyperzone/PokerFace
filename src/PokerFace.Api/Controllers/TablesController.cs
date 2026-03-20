@@ -56,7 +56,7 @@ public class TablesController : ControllerBase
             var result = _tableService.JoinTable(tableId, request);
             
             // Notify group
-            await _hubContext.Clients.Group(tableId.ToString()).SendAsync("UserJoined", result.ParticipantId, request.DisplayName);
+            await _hubContext.Clients.Group(tableId.ToString()).SendAsync("UserJoined", result.ParticipantId, request.DisplayName, request.IsObserver);
             
             return CreatedAtAction(nameof(GetTable), new { tableId = tableId }, result);
         }

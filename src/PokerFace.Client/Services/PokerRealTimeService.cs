@@ -14,7 +14,7 @@ public class PokerRealTimeService : IAsyncDisposable
     private Guid _tableId;
     private Guid _participantId;
 
-    public event Action<Guid, string>? OnUserJoined;
+    public event Action<Guid, string, bool>? OnUserJoined;
     public event Action<Guid>? OnUserConnected;
     public event Action<Guid>? OnUserDisconnected;
     public event Action<Guid>? OnUserLeft;
@@ -44,7 +44,7 @@ public class PokerRealTimeService : IAsyncDisposable
             .WithAutomaticReconnect()
             .Build();
 
-        _hubConnection.On<Guid, string>("UserJoined", (id, name) => OnUserJoined?.Invoke(id, name));
+        _hubConnection.On<Guid, string, bool>("UserJoined", (id, name, observer) => OnUserJoined?.Invoke(id, name, observer));
         _hubConnection.On<Guid, string>("UserUpdated", (id, name) => OnUserUpdated?.Invoke(id, name));
         _hubConnection.On<Guid>("UserConnected", (id) => OnUserConnected?.Invoke(id));
         _hubConnection.On<Guid>("UserDisconnected", (id) => OnUserDisconnected?.Invoke(id));
